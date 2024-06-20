@@ -142,6 +142,12 @@
     <Content Include="..\Contact-Database-Application1\deploy.parameters.json">
       <Link>deploy.parameters.json</Link>
     </Content>
+    <Content Include="..\..\..\Downloads\ExportedTemplate-Microsoft.Web-WebApp-Portal-cfcc32e9-9055\template.json">
+      <Link>template.json</Link>
+    </Content>
+    <Content Include="..\..\..\Downloads\ExportedTemplate-Microsoft.Web-WebApp-Portal-cfcc32e9-9055\parameters.json">
+      <Link>parameters.json</Link>
+    </Content>
     <None Include="Scripts\jquery-3.4.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.4.1.js" />
     <Content Include="Scripts\jquery-3.4.1.min.js" />
