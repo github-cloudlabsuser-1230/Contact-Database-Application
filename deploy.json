@@ -1,86 +1,185 @@
-
-  {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
-      "sqlServerName": {
-        "type": "string",
-        "metadata": {
-          "description": "Name of the SQL Server."
-        }
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "subscriptionId": {
+          "type": "String"
       },
-      "sqlDatabaseName": {
-        "type": "string",
-        "metadata": {
-          "description": "Name of the SQL Database."
-        }
+      "resourceGroupName": {
+          "type": "String"
       },
-      "appServiceName": {
-        "type": "string",
-        "metadata": {
-          "description": "Name of the App Service."
-        }
+      "name": {
+          "type": "String"
       },
-      "appServicePlanName": {
-        "type": "string",
-        "metadata": {
-          "description": "Name of the App Service Plan."
-        }
+      "location": {
+          "type": "String"
+      },
+      "hostingPlanName": {
+          "type": "String"
+      },
+      "serverFarmResourceGroup": {
+          "type": "String"
+      },
+      "alwaysOn": {
+          "type": "Bool"
+      },
+      "ftpsState": {
+          "type": "String"
+      },
+      "sku": {
+          "type": "String"
+      },
+      "skuCode": {
+          "type": "String"
+      },
+      "workerSize": {
+          "type": "String"
+      },
+      "workerSizeId": {
+          "type": "String"
+      },
+      "numberOfWorkers": {
+          "type": "String"
+      },
+      "currentStack": {
+          "type": "String"
+      },
+      "phpVersion": {
+          "type": "String"
+      },
+      "netFrameworkVersion": {
+          "type": "String"
       }
-    },
-    "variables": {},
-    "resources": [
+  },
+  "variables": {},
+  "resources": [
       {
-        "type": "Microsoft.Sql/servers",
-        "apiVersion": "2019-06-01-preview",
-        "name": "[parameters('sqlServerName')]",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "administratorLogin": "adminUser",
-          "administratorLoginPassword": "SecurePassword123!"
-        },
-        "resources": [
-          {
-            "type": "databases",
-            "apiVersion": "2019-06-01-preview",
-            "name": "[parameters('sqlDatabaseName')]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-              "[concat('Microsoft.Sql/servers/', parameters('sqlServerName'))]"
-            ],
-            "properties": {
-              "collation": "SQL_Latin1_General_CP1_CI_AS",
-              "edition": "Basic",
-              "maxSizeBytes": "2147483648"
-            }
+          "type": "Microsoft.Web/sites",
+          "apiVersion": "2022-03-01",
+          "name": "[parameters('name')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+              "microsoft.insights/components/vishakhaweb",
+              "[concat('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
+          ],
+          "properties": {
+              "name": "[parameters('name')]",
+              "siteConfig": {
+                  "appSettings": [
+                      {
+                          "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                          "value": "[reference('microsoft.insights/components/vishakhaweb', '2015-05-01').ConnectionString]"
+                      },
+                      {
+                          "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                          "value": "~2"
+                      },
+                      {
+                          "name": "XDT_MicrosoftApplicationInsights_Mode",
+                          "value": "default"
+                      }
+                  ],
+                  "metadata": [
+                      {
+                          "name": "CURRENT_STACK",
+                          "value": "[parameters('currentStack')]"
+                      }
+                  ],
+                  "phpVersion": "[parameters('phpVersion')]",
+                  "netFrameworkVersion": "[parameters('netFrameworkVersion')]",
+                  "alwaysOn": "[parameters('alwaysOn')]",
+                  "ftpsState": "[parameters('ftpsState')]"
+              },
+              "serverFarmId": "[concat('/subscriptions/', parameters('subscriptionId'),'/resourcegroups/', parameters('serverFarmResourceGroup'), '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]",
+              "clientAffinityEnabled": true,
+              "virtualNetworkSubnetId": null,
+              "httpsOnly": true,
+              "publicNetworkAccess": "Enabled"
+          },
+          "resources": [
+              {
+                  "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+                  "apiVersion": "2022-09-01",
+                  "name": "[concat(parameters('name'), '/scm')]",
+                  "dependsOn": [
+                      "[resourceId('Microsoft.Web/Sites', parameters('name'))]"
+                  ],
+                  "properties": {
+                      "allow": false
+                  }
+              },
+              {
+                  "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+                  "apiVersion": "2022-09-01",
+                  "name": "[concat(parameters('name'), '/ftp')]",
+                  "dependsOn": [
+                      "[resourceId('Microsoft.Web/Sites', parameters('name'))]"
+                  ],
+                  "properties": {
+                      "allow": false
+                  }
+              }
+          ]
+      },
+      {
+          "type": "Microsoft.Web/serverfarms",
+          "apiVersion": "2018-11-01",
+          "name": "[parameters('hostingPlanName')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [],
+          "sku": {
+              "Tier": "[parameters('sku')]",
+              "Name": "[parameters('skuCode')]"
+          },
+          "kind": "",
+          "properties": {
+              "name": "[parameters('hostingPlanName')]",
+              "workerSize": "[parameters('workerSize')]",
+              "workerSizeId": "[parameters('workerSizeId')]",
+              "numberOfWorkers": "[parameters('numberOfWorkers')]",
+              "zoneRedundant": false
           }
-        ]
       },
       {
-        "type": "Microsoft.Web/serverfarms",
-        "apiVersion": "2019-08-01",
-        "name": "[parameters('appServicePlanName')]",
-        "location": "[resourceGroup().location]",
-        "sku": {
-          "name": "F1",
-          "tier": "Free"
-        },
-        "properties": {}
+          "type": "microsoft.insights/components",
+          "apiVersion": "2020-02-02-preview",
+          "name": "vishakhaweb",
+          "location": "eastus",
+          "dependsOn": [
+              "newWorkspaceTemplate"
+          ],
+          "properties": {
+              "ApplicationId": "[parameters('name')]",
+              "Request_Source": "IbizaWebAppExtensionCreate",
+              "Flow_Type": "Redfield",
+              "Application_Type": "web",
+              "WorkspaceResourceId": "/subscriptions/7f1c6a19-72e3-46d9-9d09-3e12d73c95a4/resourceGroups/DefaultResourceGroup-EUS/providers/Microsoft.OperationalInsights/workspaces/DefaultWorkspace-7f1c6a19-72e3-46d9-9d09-3e12d73c95a4-EUS"
+          }
       },
       {
-        "type": "Microsoft.Web/sites",
-        "apiVersion": "2019-08-01",
-        "name": "[parameters('appServiceName')]",
-        "location": "[resourceGroup().location]",
-        "dependsOn": [
-          "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
-        ],
-        "properties": {
-          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
-        }
+          "type": "Microsoft.Resources/deployments",
+          "apiVersion": "2021-04-01",
+          "name": "newWorkspaceTemplate",
+          "properties": {
+              "mode": "Incremental",
+              "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "parameters": {},
+                  "variables": {},
+                  "resources": [
+                      {
+                          "apiVersion": "2020-08-01",
+                          "name": "DefaultWorkspace-7f1c6a19-72e3-46d9-9d09-3e12d73c95a4-EUS",
+                          "type": "Microsoft.OperationalInsights/workspaces",
+                          "location": "eastus",
+                          "properties": {}
+                      }
+                  ]
+              }
+          },
+          "subscriptionId": "[parameters('subscriptionId')]",
+          "resourceGroup": "DefaultResourceGroup-EUS"
       }
-    ],
-    "outputs": {}
-  }
-
+  ]
 }
